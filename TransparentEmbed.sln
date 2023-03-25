@@ -1,0 +1,29 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TransparentEmbed", "TransparentEmbed\TransparentEmbed.csproj", "{99AA2556-6EFF-4662-BE61-1511C215C8FC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TransparentExtract", "TransparentExtract\TransparentExtract.csproj", "{3D6214A1-C539-416A-AE59-1C14A484DC10}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CountTransparent", "CountTransparent\CountTransparent.csproj", "{03C59332-9933-42AE-9C51-044E9404C853}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{99AA2556-6EFF-4662-BE61-1511C215C8FC}.Debug|x86.ActiveCfg = Debug|x86
+		{99AA2556-6EFF-4662-BE61-1511C215C8FC}.Debug|x86.Build.0 = Debug|x86
+		{99AA2556-6EFF-4662-BE61-1511C215C8FC}.Release|x86.ActiveCfg = Release|x86
+		{99AA2556-6EFF-4662-BE61-1511C215C8FC}.Release|x86.Build.0 = Release|x86
+		{3D6214A1-C539-416A-AE59-1C14A484DC10}.Debug|x86.ActiveCfg = Debug|x86
+		{3D6214A1-C539-416A-AE59-1C14A484DC10}.Debug|x86.Build.0 = Debug|x86
+		{3D6214A1-C539-416A-AE59-1C14A484DC10}.Release|x86.ActiveCfg = Release|x86
+		{3D6214A1-C539-416A-AE59-1C14A484DC10}.Release|x86.Build.0 = Release|x86
+		{03C59332-9933-42AE-9C51-044E9404C853}.Debug|x86.ActiveCfg = Debug|x86
+		{03C59332-9933-42AE-9C51-044E9404C853}.Debug|x86.Build.0 = Debug|x86
+		{03C59332-9933-42AE-9C51-044E9404C853}.Release|x86.ActiveCfg = Release|x86
+		{03C59332-9933-42AE-9C51-044E9404C853}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+EndGlobal
