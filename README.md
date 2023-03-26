@@ -55,10 +55,10 @@ Unless an empty key is explicitly specified, the data will be encrypted using AE
 
 * (1 byte) Format version, currently 0x01
 * (1 byte) Content type:
-** 0x00 - Invalid
-** 0x01 - Data
-** 0x02 - File
-** 0x03 - Text
+* * 0x00 - Invalid
+* * 0x01 - Data
+* * 0x02 - File
+* * 0x03 - Text
 * (4 bytes) Length of (compressed) data
 * (16 bytes) MD5 hash of (compressed) data
 
