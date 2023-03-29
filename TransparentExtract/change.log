@@ -1,4 +1,5 @@
 === Not yet released ===
+- Fixed issue where --verbose was enabled even if not specified.
 - Added --list option, which allows a file containing a newline-separated list
   of image files to be used as image file.
 

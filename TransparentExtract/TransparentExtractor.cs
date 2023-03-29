@@ -60,7 +60,7 @@ namespace TransparentExtract
             0x20, 0x73, 0x61, 0x79, 0x2e
         };
         private static bool silent = true;
-        private static bool verbose = true;
+        private static bool verbose = false;
 
         public static void Main(string[] args)
         {
