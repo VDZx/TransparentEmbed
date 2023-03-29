@@ -1,0 +1,6 @@
+=== Not yet released ===
+- Added --list option, which allows a file containing a newline-separated list
+  of image files to be used as image file.
+
+=== Version 1 (March 25th, 2023) ===
+- Initial release

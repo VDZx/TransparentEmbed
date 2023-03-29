@@ -32,7 +32,8 @@ The following options are supported:
 
 * -k [key], --key [key]: Use the specified encryption key
 * -t [number], --threshold [number]: Maximum alpha for data pixels (0 by default)
-* -a [inputFile], --append [inputFile]: Also extract another file and append it to the result (can be repeated)
+* -l [listFile], --list [listFile]: Treat inputFile as a newline-separated list of input files
+* -a [inputFile], --append [inputFile]: Also extract another file and append it to the result (can be repeated) (applied after --list)
 * -p, --print: Display the embedded text instead of writing to a file
 * -v, --verbose: Print verbose output
 * -s, --silent: Do not print any output other than --print output (will still print output if invalid arguments are provided, but not on error)

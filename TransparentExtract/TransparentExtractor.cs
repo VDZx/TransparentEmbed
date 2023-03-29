@@ -71,6 +71,7 @@ namespace TransparentExtract
             string key = KEY_DEFAULT;
             int threshold = 0;
             bool doPrint = false;
+            bool inputIsList = false;
             string inputfile = null;
             string outputfile = null;
             List<string> appendFiles = new List<string>();
@@ -102,6 +103,10 @@ namespace TransparentExtract
                                 Console.WriteLine("Could not read value for threshold: " + ex.ToString());
                                 return;
                             }
+                            break;
+                        case "-l":
+                        case "--list":
+                            inputIsList = true;
                             break;
                         case "-a":
                         case "--append":
@@ -157,9 +162,41 @@ namespace TransparentExtract
                 return;
             }
 
+            //Handle list if provided
+            if (inputIsList)
+            {
+                VerbosePrint("Reading list of files from '" + inputfile + "...");
+                List<string> newAppendFiles = new List<string>();
+                StreamReader sr = new StreamReader(inputfile);
+                inputfile = null;
+                while(!sr.EndOfStream)
+                {
+                    string line = sr.ReadLine().Trim();
+                    if (line == "") continue;
+                    if (inputfile == null) inputfile = line;
+                    else newAppendFiles.Add(line);
+                }
+                sr.Close();
+                newAppendFiles.AddRange(appendFiles); //Add --append files as well
+                appendFiles = newAppendFiles;
+            }
+
             //Extract data
-            EmbeddedData data = ExtractData(inputfile, key, threshold);
             EmbeddedData[] appended = new EmbeddedData[appendFiles.Count];
+            if (appended.Length == 0)
+            {
+                VerbosePrint("Will extract data from the following file: " + inputfile);
+            }
+            else
+            {
+                VerbosePrint("Will extract data from the following files:");
+                VerbosePrint(inputfile);
+                for (int i = 0; i < appendFiles.Count; i++)
+                {
+                    VerbosePrint(appendFiles[i]);
+                }
+            }
+            EmbeddedData data = ExtractData(inputfile, key, threshold);
             for (int i = 0; i < appended.Length; i++)
             {
                 appended[i] = ExtractData(appendFiles[i], key, threshold);
@@ -192,7 +229,8 @@ namespace TransparentExtract
             Console.WriteLine("Usage: TransparentExtract.exe [options] <inputFile> [outputFile]");
             Console.WriteLine("-k [key], --key [key]: Use the specified encryption key");
             Console.WriteLine("-t [number], --threshold [number]: Maximum alpha for data pixels (0 by default)");
-            Console.WriteLine("-a [inputFile], --append [inputFile]: Also extract another file and append it to the result (can be repeated)");
+            Console.WriteLine("-l [listFile], --list [listFile]: Treat inputFile as a newline-separated list of input files");
+            Console.WriteLine("-a [inputFile], --append [inputFile]: Also extract another file and append it to the result (can be repeated) (applied after --list)");
             Console.WriteLine("-p, --print: Display the embedded text instead of writing to a file");
             Console.WriteLine("-v, --verbose: Print verbose output");
             Console.WriteLine("-s, --silent: Do not print any output other than --print output (will still print output if invalid arguments are provided, but not on error)");

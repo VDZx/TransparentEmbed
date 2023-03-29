@@ -176,7 +176,10 @@ namespace TransparentEmbed
 
             if (EmbedFile(inputFile, fileToEmbed, outputFile, key, offset, bytesToRead, contentType, threshold))
             {
-                Print("Successfully embedded file '" + fileToEmbed + "' into '" + inputFile + "' and exported the result as '" + outputFile + "'.");
+                string rangeText = "";
+                if (bytesToRead > 0) { rangeText = "(bytes " + offset + " to " + (bytesToRead + offset - 1) + ") "; }
+                else if (offset > 0) { rangeText = "(byte " + offset + " to end) "; }
+                Print("Successfully embedded file '" + fileToEmbed + "' " + rangeText + "into '" + inputFile + "' and exported the result as '" + outputFile + "'.");
             }
             else
             {
