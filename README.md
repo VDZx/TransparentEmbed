@@ -74,6 +74,8 @@ The encryption used is AES256 with a randomly generated IV (16 bytes), which is 
 
 # Examples
 
+## Simple embed
+
 The following image contains the source and binaries of the TransparentEmbed tools as well as the RelativeEmbed tools, using the default key:
 
 ![embeddingtools](https://user-images.githubusercontent.com/1906108/227747064-f1a79416-d824-400d-8dbe-6fb2cd9491bf.png)
@@ -81,6 +83,8 @@ The following image contains the source and binaries of the TransparentEmbed too
 
 * It was embedded by running: TransparentEmbed.exe "laughing mahiro.png" embeddingtools.zip output.png
 * It can be extracted by running: TransparentExtract.exe input.png output.zip
+
+## Split embed
 
 If you have more data than you can fit in an image, you can split it over multiple images:
 
@@ -94,3 +98,46 @@ If you have more data than you can fit in an image, you can split it over multip
 * Extract it by running: TransparentExtract.exe --append b.png a.png output.mp3
 
 This outputs a 4.8 MB MP3 file from two normal-looking image files of 4.2 MB and 3.7 MB.
+
+## Multiple embeds in one image
+
+Starting with version 2, you can embed in specific ranges, allowing for multiple embeds in one image (with the same key, or with different keys). The following commands were used to create this image with 8 different embeds all with different keys:
+
+* TransparentEmbed.exe --content text --end 30000 "v.png" "v-index.txt" "v1.png"
+* TransparentEmbed.exe --key "RepoURL" --content text --begin 30000 --end 60000 "v1.png" "repourl.txt" "v2.png"
+* TransparentEmbed.exe --key "TransparentEmbedSource" --content text --begin 60000 --end 90000 "v2.png" "TransparentEmbedder.cs" "v3.png"
+* TransparentEmbed.exe --key "TransparentEmbedBinary" --content file --begin 90000 --end 120000 "v3.png" "TransparentEmbed.exe" "v4.png"
+* TransparentEmbed.exe --key "TransparentExtractSource" --content text --begin 120000 --end 150000 "v4.png" "TransparentExtractor.cs" "v5.png"
+* TransparentEmbed.exe --key "TransparentExtractBinary" --content file --begin 150000 --end 180000 "v5.png" "TransparentExtract.exe" "v6.png"
+* TransparentEmbed.exe --key "CountTransparentSource" --content text --begin 180000 --end 210000 "v6.png" "CountTransparent.cs" "v7.png"
+* TransparentEmbed.exe --key "CountTransparentBinary" --content file --begin 210000 --end 240000 "v7.png" "CountTransparent.exe" "v8.png"
+
+![v8](https://user-images.githubusercontent.com/1906108/229020215-f74dfc23-8648-4676-aa43-ada27ee09b3d.png)
+<sub>(Couldn't identify artist)</sub>
+
+Extracting from position 0 (default) with the default key gives you a list with positions and keys, plus a bash script to extract it all:
+```
+$ mono TransparentExtract.exe --print v8.png
+0 - SecureBeneathTheWatchfulEyes (gives this list)
+30000 - RepoURL
+60000 - TransparentEmbedSource
+90000 - TransparentEmbedBinary
+120000 - TransparentExtractSource
+150000 - TransparentExtractBinary
+180000 - CountTransparentSource
+210000 - CountTransparentBinary
+
+You can use the following bash script to extract everything:
+#!/bin/sh
+mkdir out
+mono TransparentExtract.exe "v1.png" "out/v-index.txt"
+mono TransparentExtract.exe --key "RepoURL" --begin 30000 "v8.png" "out/repourl.txt"
+mono TransparentExtract.exe --key "TransparentEmbedSource" --begin 60000 "v8.png" "out/TransparentEmbedder.cs"
+mono TransparentExtract.exe --key "TransparentEmbedBinary" --begin 90000 "v8.png" "out/TransparentEmbed.exe"
+mono TransparentExtract.exe --key "TransparentExtractSource" --begin 120000 "v8.png" "out/TransparentExtractor.cs"
+mono TransparentExtract.exe --key "TransparentExtractBinary" --begin 150000 "v8.png" "out/TransparentExtract.exe"
+mono TransparentExtract.exe --key "CountTransparentSource" --begin 180000 "v8.png" "out/CountTransparent.cs"
+mono TransparentExtract.exe --key "CountTransparentBinary" --begin 210000 "v8.png" "out/CountTransparent.exe"
+```
+
+(Note that in this example, no random padding is used beyond the last file due to file size constraints on GitHub and elsewhere. Ideally you omit the --end for the last file and leave the embedded data indistinguishable from random noise.)
