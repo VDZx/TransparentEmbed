@@ -306,13 +306,33 @@ namespace TransparentEmbed
                 {
                     Color c = bmp.GetPixel(ix, iy);
                     if (c.A > threshold) continue; //Skip pixels that aren't transparent (enough)
-                    embedStart--;
-                    embedEnd--;
-                    if (embedStart > -1) continue; //Skip until starting point
-                    if (!ignoreEnd && (embedEnd < 0)) continue; //Don't write beyond end point
-                    byte b1 = ((pos < data.Length) ? data[pos++] : (fillWithRandom ? randomBytes[ix * 3 + 0] : c.R));
-                    byte b2 = ((pos < data.Length) ? data[pos++] : (fillWithRandom ? randomBytes[ix * 3 + 0] : c.G));
-                    byte b3 = ((pos < data.Length) ? data[pos++] : (fillWithRandom ? randomBytes[ix * 3 + 0] : c.B));
+                    byte b1 = 0; //R
+                    byte b2 = 0; //G
+                    byte b3 = 0; //B
+                    for (int iColors = 0; iColors < 3; iColors++)
+                    {
+                        //Consider what to write
+                        bool allowWrite = true;
+                        bool allowRandom = true;
+                        embedStart--;
+                        embedEnd--;
+                        if (!fillWithRandom) { allowRandom = false; }
+                        if (embedStart > -1) { allowWrite = false; allowRandom = false; } //Skip until starting point
+                        if (!ignoreEnd && (embedEnd < 0)) { allowWrite = false; allowRandom = false; } //Don't write beyond end point
+                        if (pos >= data.Length) { allowWrite = false; } //Beyond end of input
+                        //Determine what to write
+                        byte b = (iColors == 0 ? c.R : (iColors == 1 ? c.G : c.B)); //Default: Existing byte
+                        if (allowWrite) { b = data[pos++]; }
+                        else if (allowRandom) { b = randomBytes[ix * 3 + iColors]; }
+                        //Set the result
+                        switch(iColors)
+                        {
+                            case 0: b1 = b; break;
+                            case 1: b2 = b; break;
+                            case 2: b3 = b; break;
+                        }
+                    }
+                    //Write the pixel
                     bmp.SetPixel(ix, iy, Color.FromArgb(c.A, b1, b2, b3));
                 }
             }

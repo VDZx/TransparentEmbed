@@ -337,11 +337,9 @@ namespace TransparentExtract
                 {
                     Color c = bmp.GetPixel(ix, iy);
                     if (c.A > threshold) continue;
-                    begin--;
-                    if (begin > -1) continue; //Skip until begin
-                    ms.WriteByte(c.R);
-                    ms.WriteByte(c.G);
-                    ms.WriteByte(c.B);
+                    if (begin-- <= 0) ms.WriteByte(c.R);
+                    if (begin-- <= 0) ms.WriteByte(c.G);
+                    if (begin-- <= 0) ms.WriteByte(c.B);
                 }
             }
             VerbosePrint("Read " + ms.Length + " bytes from image (including filler bytes).");
