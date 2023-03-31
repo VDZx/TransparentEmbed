@@ -1,4 +1,4 @@
-=== Not yet released ===
+=== Version 2 (March 31st, 2023) ===
 - Added --begin and --end options, allowing you to embed within a specific
   range within the image. (This allows multiple embeddings, optionally with
   different keys, in the same image.)
