@@ -66,78 +66,53 @@ namespace TransparentEmbed
             int threshold = 0;
             long offset = 0;
             int bytesToRead = 0;
+            int begin = 0;
+            int end = 0;
             while (ap.HasNext())
             {
                 string arg = ap.GetNext();
                 if (arg.StartsWith("-"))
                 {
-                    switch(arg)
+                    switch (arg)
                     {
                         case "-k":
                         case "--key":
-                            if (!ap.HasNext())
-                            {
-                                Console.WriteLine("No argument provided for -k or --key!");
-                                return;
-                            }
+                            FailIfNoAPNext(ap, arg);
                             key = ap.GetNext();
                             break;
                         case "-c":
                         case "--content":
-                            if (!ap.HasNext())
-                            {
-                                Console.WriteLine("No argument provided for -c or --content!");
-                                return;
-                            }
+                            FailIfNoAPNext(ap, arg);
                             string typestring = ap.GetNext();
-                            switch(typestring.ToLower())
+                            switch (typestring.ToLower())
                             {
                                 case "file": contentType = ContentType.File; break;
                                 case "text": contentType = ContentType.Text; break;
                                 case "data": contentType = ContentType.Data; break;
                                 default:
-                                    Console.WriteLine("Unknown content type: " + typestring);
+                                    PrintAndExit("Unknown content type: " + typestring, true, false);
                                     return;
                             }
                             break;
                         case "-t":
                         case "--threshold":
-                            try
-                            {
-                                threshold = Convert.ToInt32(ap.GetNext());
-                                if (threshold < 0) throw new Exception("Threshold must be 0 or higher!");
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine("Could not read value for threshold: " + ex.ToString());
-                                return;
-                            }
+                            threshold = ReadIntArg(ap, true, arg);
                             break;
                         case "-o":
                         case "--offset":
-                            try
-                            {
-                                offset = Convert.ToInt64(ap.GetNext());
-                                if (offset < 0) throw new Exception("Offset must be 0 or higher!");
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine("Could not read value for offset: " + ex.ToString());
-                                return;
-                            }
+                            offset = ReadLongArg(ap, true, arg);
                             break;
                         case "-l":
                         case "--length":
-                            try
-                            {
-                                bytesToRead = Convert.ToInt32(ap.GetNext());
-                                if (bytesToRead < 0) throw new Exception("Length must be 0 or higher!");
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine("Could not read value for length: " + ex.ToString());
-                                return;
-                            }
+                            bytesToRead = ReadIntArg(ap, true, arg);
+                            break;
+                        case "-b":
+                        case "--begin":
+                            begin = ReadIntArg(ap, true, arg);
+                            break;
+                        case "-e":
+                        case "--end":
+                            end = ReadIntArg(ap, true, arg);
                             break;
                         case "-v":
                         case "--verbose":
@@ -148,43 +123,66 @@ namespace TransparentEmbed
                             silent = true;
                             break;
                         default:
-                            Console.WriteLine("Unrecognized option: " + arg);
-                            PrintUsage();
+                            PrintAndExit("Unrecognized option: " + arg, true, true);
                             return;
                     }
                 }
                 else if (inputFile == null) { inputFile = arg; }
                 else if (fileToEmbed == null) { fileToEmbed = arg; }
                 else if (outputFile == null) { outputFile = arg; }
-                else
-                {
-                    Console.WriteLine("Too many arguments specified.");
-                    PrintUsage();
-                    return;
-                }
+                else { PrintAndExit("Too many arguments specified.", true, true); }
             }
 
-            if (outputFile == null) //Not enough arguments specified
-            {
-                Console.WriteLine("Not enough arguments specified.");
-                PrintUsage();
-                return;
-            }
+            if (outputFile == null) PrintAndExit("Not enough arguments specified.", true, true); //Not enough arguments specified
 
             if (key != KEY_DEFAULT) VerbosePrint("Using specified key: '" + key + "'");
             else VerbosePrint("No key specified, using default: '" + key + "'");
 
-            if (EmbedFile(inputFile, fileToEmbed, outputFile, key, offset, bytesToRead, contentType, threshold))
+            if (EmbedFile(inputFile, fileToEmbed, outputFile, key, offset, bytesToRead, contentType, begin, end, threshold))
             {
-                string rangeText = "";
-                if (bytesToRead > 0) { rangeText = "(bytes " + offset + " to " + (bytesToRead + offset - 1) + ") "; }
-                else if (offset > 0) { rangeText = "(byte " + offset + " to end) "; }
-                Print("Successfully embedded file '" + fileToEmbed + "' " + rangeText + "into '" + inputFile + "' and exported the result as '" + outputFile + "'.");
+                string inputRangeText = "";
+                if (bytesToRead > 0) { inputRangeText = "(bytes " + offset + " - " + (bytesToRead + offset - 1) + ") "; }
+                else if (offset > 0) { inputRangeText = "(byte " + offset + " to end) "; }
+                string outputRangeText = "";
+                if (end > 0) { outputRangeText = "(" + begin + " - " + (end - 1) + ") "; }
+                else if (begin > 0) { outputRangeText = "(" + begin + " to end) "; }
+                Print("Successfully embedded file '" + fileToEmbed + "' " + inputRangeText + "into '" + inputFile + "' " + outputRangeText + "and exported the result as '" + outputFile + "'.");
             }
             else
             {
                 Print("Failed to embed file!");
             }
+        }
+
+        private static void FailIfNoAPNext(ArgumentParser ap, string arg)
+        {
+            if (!ap.HasNext()) { PrintAndExit("No argument provided for " + arg + "!", true, false); }
+        }
+
+        private static long ReadLongArg(ArgumentParser ap, bool zeroCheck, string arg = "parameter")
+        {
+            FailIfNoAPNext(ap, arg);
+            try
+            {
+                long toReturn = Convert.ToInt64(ap.GetNext());
+                if (zeroCheck && toReturn < 0) throw new Exception("Must be 0 or higher!");
+                return toReturn;
+            }
+            catch (Exception ex)
+            {
+                PrintAndExit("Could not read value for " + arg + ": " + ex.ToString(), true, false);
+                return 0; //Never reached
+            }
+        }
+
+        private static int ReadIntArg(ArgumentParser ap, bool zeroCheck, string arg = "parameter") { return (int)ReadLongArg(ap, zeroCheck, arg); }
+
+        private static void PrintAndExit(string msg, bool evenIfSilent = false, bool printUsage = false, int exitCode = 1)
+        {
+            if (evenIfSilent) Console.WriteLine(msg);
+            else Print(msg);
+            if (printUsage) PrintUsage();
+            Environment.Exit(exitCode);
         }
 
         private static void PrintUsage()
@@ -195,6 +193,8 @@ namespace TransparentEmbed
             Console.WriteLine("-t [number], --threshold [number]: Maximum alpha for data pixels (0 by default)");
             Console.WriteLine("-o [offset], --offset [offset]: Offset in fileToEmbed to start reading at (0 by default)");
             Console.WriteLine("-l [bytes], --length [bytes]: Number of bytes in fileToEmbed to read; use 0 to read everything (0 by default)");
+            Console.WriteLine("-b [num], --begin [num]: Skip the first num eligible (i.e. sufficiently transparent) bytes (they will not be randomized either) (0 by default)");
+            Console.WriteLine("-e [num], --end [num]: Do not write beyond num eligible (i.e. sufficiently transparent) bytes (no randomization beyond this point either); use 0 to use everything past --start (0 by default; value is exclusive)");
             Console.WriteLine("-v, --verbose: Print verbose output");
             Console.WriteLine("-s, --silent: Do not print any output (will still print output if invalid arguments are provided, but not on error)");
             Console.WriteLine("If no key is specified, the key '" + KEY_DEFAULT + "' will be used by default. Explicitly specify an empty "
@@ -202,27 +202,27 @@ namespace TransparentEmbed
             return;
         }
 
-        public static bool EmbedFile(string inputFile, string fileToEmbed, string outputFile, string key, long startOffset = 0, int bytesToRead = 0, ContentType contentType = ContentType.File, int threshold = 0)
+        public static bool EmbedFile(string inputFile, string fileToEmbed, string outputFile, string key, long inputOffset = 0, int bytesToRead = 0, ContentType contentType = ContentType.File, int embedStart = 0, int embedEnd = 0, int threshold = 0)
         {
             VerbosePrint("Reading data to embed from file '" + fileToEmbed + "'...");
             FileStream fs = new FileStream(fileToEmbed, FileMode.Open, FileAccess.Read);
             int toRead = bytesToRead;
-            if (toRead == 0 || (toRead > (fs.Length - startOffset))) { toRead = (int)(fs.Length - startOffset); }
-            VerbosePrint("Reading " + toRead + " bytes from offset " + startOffset + "...");
-            if (startOffset > 0) fs.Seek(startOffset, SeekOrigin.Begin);
+            if (toRead == 0 || (toRead > (fs.Length - inputOffset))) { toRead = (int)(fs.Length - inputOffset); }
+            VerbosePrint("Reading " + toRead + " bytes from offset " + inputOffset + "...");
+            if (inputOffset > 0) fs.Seek(inputOffset, SeekOrigin.Begin);
             byte[] dataToEmbed = new byte[toRead];
             fs.Read(dataToEmbed, 0, toRead);
             fs.Close();
             VerbosePrint("Embedding data into file '" + inputFile + "', to export as '" + outputFile + "'.");
-            return EmbedData(inputFile, dataToEmbed, contentType, outputFile, key, threshold, true);
+            return EmbedData(inputFile, dataToEmbed, contentType, outputFile, key, embedStart, embedEnd, threshold, true);
         }
 
-        public static bool EmbedData(string inputFile, byte[] data, ContentType contentType, string outputFile, string key, int threshold = 0, bool fillWithRandom = true)
+        public static bool EmbedData(string inputFile, byte[] data, ContentType contentType, string outputFile, string key, int embedStart = 0, int embedEnd = 0, int threshold = 0, bool fillWithRandom = true)
         {
             VerbosePrint("Loading input file...");
             Bitmap bmp = new Bitmap(inputFile);
             bmp = ConvertBitmap(bmp);
-            bmp = EmbedData(bmp, data, contentType, key, threshold, fillWithRandom);
+            bmp = EmbedData(bmp, data, contentType, key, embedStart, embedEnd, threshold, fillWithRandom);
             if (bmp == null) return false;
             VerbosePrint("Exporting file...");
             bmp.Save(outputFile);
@@ -230,7 +230,7 @@ namespace TransparentEmbed
             return true;
         }
 
-        public static Bitmap EmbedData(Bitmap bmp, byte[] data, ContentType contentType, string key, int threshold = 0, bool fillWithRandom = true)
+        public static Bitmap EmbedData(Bitmap bmp, byte[] data, ContentType contentType, string key, int embedStart = 0, int embedEnd = 0, int threshold = 0, bool fillWithRandom = true)
         {
             bool useEncryption = (key != null && key.Length > 0);
 
@@ -288,12 +288,13 @@ namespace TransparentEmbed
             msCompressed.Close();
 
             //Embed
-            return EmbedRawData(bmp, finalData, threshold, fillWithRandom);
+            return EmbedRawData(bmp, finalData, embedStart, embedEnd, threshold, fillWithRandom);
         }
 
-        public static Bitmap EmbedRawData(Bitmap bmp, byte[] data, int threshold = 0, bool fillWithRandom = true)
+        public static Bitmap EmbedRawData(Bitmap bmp, byte[] data, int embedStart = 0, int embedEnd = 0, int threshold = 0, bool fillWithRandom = true)
         {
             VerbosePrint("Embedding data into bitmap...");
+            bool ignoreEnd = (embedEnd == 0);
             Random random = (fillWithRandom ? new Random() : null);
             long pos = 0; //Position in data buffer
 
@@ -305,6 +306,10 @@ namespace TransparentEmbed
                 {
                     Color c = bmp.GetPixel(ix, iy);
                     if (c.A > threshold) continue; //Skip pixels that aren't transparent (enough)
+                    embedStart--;
+                    embedEnd--;
+                    if (embedStart > -1) continue; //Skip until starting point
+                    if (!ignoreEnd && (embedEnd < 0)) continue; //Don't write beyond end point
                     byte b1 = ((pos < data.Length) ? data[pos++] : (fillWithRandom ? randomBytes[ix * 3 + 0] : c.R));
                     byte b2 = ((pos < data.Length) ? data[pos++] : (fillWithRandom ? randomBytes[ix * 3 + 0] : c.G));
                     byte b3 = ((pos < data.Length) ? data[pos++] : (fillWithRandom ? randomBytes[ix * 3 + 0] : c.B));
@@ -348,11 +353,11 @@ namespace TransparentEmbed
 
         //=== Stuff below is not used internally, but could be useful for other programs ===
 
-        public static void EmbedRawData(string inputFile, byte[] data, string outputFile, int threshold = 0, bool fillWithRandom = true)
+        public static void EmbedRawData(string inputFile, byte[] data, string outputFile, int embedStart = 0, int embedEnd = 0, int threshold = 0, bool fillWithRandom = true)
         {
             VerbosePrint("Loading input file...");
             Bitmap bmp = new Bitmap(inputFile);
-            bmp = EmbedRawData(bmp, data, threshold, fillWithRandom);
+            bmp = EmbedRawData(bmp, data, embedStart, embedEnd, threshold, fillWithRandom);
             VerbosePrint("Exporting file...");
             bmp.Save(outputFile);
             VerbosePrint("Successfully exported file!");

@@ -1,7 +1,8 @@
 === Not yet released ===
 - Fixed issue where --verbose was enabled even if not specified.
+- Added --begin option, allowing you to start reading partway into the image.
 - Added --list option, which allows a file containing a newline-separated list
-  of image files to be used as image file.
+  of image files to be used as input file.
 
 === Version 1 (March 25th, 2023) ===
 - Initial release

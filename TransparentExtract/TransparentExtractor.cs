@@ -70,6 +70,7 @@ namespace TransparentExtract
             ArgumentParser ap = new ArgumentParser(args);
             string key = KEY_DEFAULT;
             int threshold = 0;
+            int begin = 0;
             bool doPrint = false;
             bool inputIsList = false;
             string inputfile = null;
@@ -84,25 +85,16 @@ namespace TransparentExtract
                     {
                         case "-k":
                         case "--key":
-                            if (!ap.HasNext())
-                            {
-                                Console.WriteLine("No argument provided for -k or --key!");
-                                return;
-                            }
+                            FailIfNoAPNext(ap, arg);
                             key = ap.GetNext();
                             break;
                         case "-t":
                         case "--threshold":
-                            try
-                            {
-                                threshold = Convert.ToInt32(ap.GetNext());
-                                if (threshold < 0) throw new Exception("Threshold must be 0 or higher!");
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine("Could not read value for threshold: " + ex.ToString());
-                                return;
-                            }
+                            threshold = ReadIntArg(ap, true, arg);
+                            break;
+                        case "-b":
+                        case "--begin":
+                            begin = ReadIntArg(ap, true, arg);
                             break;
                         case "-l":
                         case "--list":
@@ -110,11 +102,7 @@ namespace TransparentExtract
                             break;
                         case "-a":
                         case "--append":
-                            if (!ap.HasNext())
-                            {
-                                Console.WriteLine("No argument provided for -a or --appendfile!");
-                                return;
-                            }
+                            FailIfNoAPNext(ap, arg);
                             appendFiles.Add(ap.GetNext());
                             break;
                         case "-p":
@@ -130,8 +118,7 @@ namespace TransparentExtract
                             silent = true;
                             break;
                         default:
-                            Console.WriteLine("Unrecognized option: " + arg);
-                            PrintUsage();
+                            PrintAndExit("Unrecognized option: " + arg, true, true);
                             return;
                     }
                 }
@@ -139,28 +126,13 @@ namespace TransparentExtract
                 {
                     if (inputfile == null) { inputfile = arg; }
                     else if (outputfile == null) { outputfile = arg; }
-                    else
-                    {
-                        Console.WriteLine("Too many arguments specified.");
-                        PrintUsage();
-                        return;
-                    }
+                    else { PrintAndExit("Too many arguments specified.", true, true); }
                 }
             }
 
             //Check required arguments
-            if (inputfile == null)
-            {
-                Console.WriteLine("No input file specified!");
-                PrintUsage();
-                return;
-            }
-            if (outputfile == null && !doPrint)
-            {
-                Console.WriteLine("No output file specified!");
-                PrintUsage();
-                return;
-            }
+            if (inputfile == null) PrintAndExit("No input file specified!", true, true);
+            if (outputfile == null && !doPrint) PrintAndExit("No output file specified!", true, true);
 
             //Handle list if provided
             if (inputIsList)
@@ -196,10 +168,10 @@ namespace TransparentExtract
                     VerbosePrint(appendFiles[i]);
                 }
             }
-            EmbeddedData data = ExtractData(inputfile, key, threshold);
+            EmbeddedData data = ExtractData(inputfile, key, begin, threshold);
             for (int i = 0; i < appended.Length; i++)
             {
-                appended[i] = ExtractData(appendFiles[i], key, threshold);
+                appended[i] = ExtractData(appendFiles[i], key, begin, threshold);
             }
 
 
@@ -224,6 +196,37 @@ namespace TransparentExtract
             }
         }
 
+        private static void FailIfNoAPNext(ArgumentParser ap, string arg)
+        {
+            if (!ap.HasNext()) { PrintAndExit("No argument provided for " + arg + "!", true, false); }
+        }
+
+        private static long ReadLongArg(ArgumentParser ap, bool zeroCheck, string arg = "parameter")
+        {
+            FailIfNoAPNext(ap, arg);
+            try
+            {
+                long toReturn = Convert.ToInt64(ap.GetNext());
+                if (zeroCheck && toReturn < 0) throw new Exception("Must be 0 or higher!");
+                return toReturn;
+            }
+            catch (Exception ex)
+            {
+                PrintAndExit("Could not read value for " + arg + ": " + ex.ToString(), true, false);
+                return 0; //Never reached
+            }
+        }
+
+        private static int ReadIntArg(ArgumentParser ap, bool zeroCheck, string arg = "parameter") { return (int)ReadLongArg(ap, zeroCheck, arg); }
+
+        private static void PrintAndExit(string msg, bool evenIfSilent = false, bool printUsage = false, int exitCode = 1)
+        {
+            if (evenIfSilent) Console.WriteLine(msg);
+            else Print(msg);
+            if (printUsage) PrintUsage();
+            Environment.Exit(exitCode);
+        }
+
         private static void PrintUsage()
         {
             Console.WriteLine("Usage: TransparentExtract.exe [options] <inputFile> [outputFile]");
@@ -231,6 +234,7 @@ namespace TransparentExtract
             Console.WriteLine("-t [number], --threshold [number]: Maximum alpha for data pixels (0 by default)");
             Console.WriteLine("-l [listFile], --list [listFile]: Treat inputFile as a newline-separated list of input files");
             Console.WriteLine("-a [inputFile], --append [inputFile]: Also extract another file and append it to the result (can be repeated) (applied after --list)");
+            Console.WriteLine("-b [num], --begin [num]: Only start reading after num eligible (i.e. sufficiently transparent) bytes (0 by default)");
             Console.WriteLine("-p, --print: Display the embedded text instead of writing to a file");
             Console.WriteLine("-v, --verbose: Print verbose output");
             Console.WriteLine("-s, --silent: Do not print any output other than --print output (will still print output if invalid arguments are provided, but not on error)");
@@ -239,15 +243,15 @@ namespace TransparentExtract
             return;
         }
 
-        public static EmbeddedData ExtractData(string filepath, string key, int threshold = 0)
+        public static EmbeddedData ExtractData(string filepath, string key, int begin = 0, int threshold = 0)
         {
             Bitmap bmp = new Bitmap(filepath);
-            return ExtractData(bmp, key, threshold);
+            return ExtractData(bmp, key, begin, threshold);
         }
 
-        public static EmbeddedData ExtractData(Bitmap bmp, string key, int threshold = 0)
+        public static EmbeddedData ExtractData(Bitmap bmp, string key, int begin = 0, int threshold = 0)
         {
-            return ParseData(ExtractRawData(bmp, threshold), key);
+            return ParseData(ExtractRawData(bmp, begin, threshold), key);
         }
 
         public static EmbeddedData ParseData(byte[] rawData, string key)
@@ -323,7 +327,7 @@ namespace TransparentExtract
             return data;
         }
 
-        public static byte[] ExtractRawData(Bitmap bmp, int threshold = 0)
+        public static byte[] ExtractRawData(Bitmap bmp, int begin = 0, int threshold = 0)
         {
             VerbosePrint("Reading data from image, threshold = " + threshold);
             MemoryStream ms = new MemoryStream(bmp.Width * bmp.Height * 3);
@@ -333,6 +337,8 @@ namespace TransparentExtract
                 {
                     Color c = bmp.GetPixel(ix, iy);
                     if (c.A > threshold) continue;
+                    begin--;
+                    if (begin > -1) continue; //Skip until begin
                     ms.WriteByte(c.R);
                     ms.WriteByte(c.G);
                     ms.WriteByte(c.B);

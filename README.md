@@ -17,6 +17,8 @@ The following options are supported:
 * -t [number], --threshold [number]: Maximum alpha for data pixels (0 by default)
 * -o [offset], --offset [offset]: Offset in fileToEmbed to start reading at (0 by default)
 * -l [bytes], --length [bytes]: Number of bytes in fileToEmbed to read; use 0 to read everything (0 by default)
+* -b [num], --begin [num]: Skip the first num eligible (i.e. sufficiently transparent) bytes (they will not be randomized either) (0 by default)
+* -e [num], --end [num]: Do not write beyond num eligible (i.e. sufficiently transparent) bytes (no randomization beyond this point either); use 0 to use everything past --start (0 by default; value is exclusive)
 * -v, --verbose: Print verbose output
 * -s, --silent: Do not print any output (will still print output if invalid arguments are provided, but not on error)
 
@@ -32,6 +34,7 @@ The following options are supported:
 
 * -k [key], --key [key]: Use the specified encryption key
 * -t [number], --threshold [number]: Maximum alpha for data pixels (0 by default)
+* -b [num], --begin [num]: Only start reading after num eligible (i.e. sufficiently transparent) bytes (0 by default)
 * -l [listFile], --list [listFile]: Treat inputFile as a newline-separated list of input files
 * -a [inputFile], --append [inputFile]: Also extract another file and append it to the result (can be repeated) (applied after --list)
 * -p, --print: Display the embedded text instead of writing to a file
